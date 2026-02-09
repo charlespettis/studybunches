@@ -41,6 +41,6 @@ public class Room {
     }
 
     public void resetScore(String userId) {
-        scores.put(userId, 0l);
+        scores.put(userId, 0L);
     }
 }

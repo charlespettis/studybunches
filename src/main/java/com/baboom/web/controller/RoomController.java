@@ -1,5 +1,6 @@
 package com.baboom.web.controller;
 
+import org.jetbrains.annotations.NotNull;
 import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -29,7 +30,7 @@ public class RoomController {
     }
 
     @GetMapping
-    public RoomDto getRoom(@RequestParam() String code){
+    public RoomDto getRoom(@RequestParam() @NotNull String code){
         return service.getRoom(code);
     }
 

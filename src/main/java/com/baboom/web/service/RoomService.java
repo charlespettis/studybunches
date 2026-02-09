@@ -1,28 +1,35 @@
 package com.baboom.web.service;
 
-import java.util.Random;
+import java.security.SecureRandom;
 
 import org.springframework.stereotype.Service;
 
 import com.baboom.web.dto.RoomDto;
+import com.baboom.web.exception.QuestionGenerationException;
+import com.baboom.web.exception.RoomNotFoundException;
 import com.baboom.web.integration.OpenAI;
-import com.baboom.web.integration.PromptBuilder;
 import com.baboom.web.model.QuestionList;
 import com.baboom.web.model.Room;
-import com.baboom.web.store.InMemoryRoomStore;
+import com.baboom.web.store.RoomStore;
 
 @Service
 public class RoomService {
-    private final InMemoryRoomStore store;
+    private final RoomStore store;
+    private final OpenAI openAI;
 
-    public RoomService(InMemoryRoomStore store){
+    public RoomService(RoomStore store, OpenAI openAI){
         this.store = store;
+        this.openAI = openAI;
     }
 
     private String generateRandomRoomCode(){
-        Random rnd = new Random();
+        SecureRandom rnd = new SecureRandom();
         int number = rnd.nextInt(999999);
         return String.format("%06d", number);
+    }
+
+    private RoomDto toDto(Room room){
+        return new RoomDto(room.getId(), room.getCode(), room.getQuestions(), room.getScores());
     }
 
     public RoomDto createRoom(){
@@ -34,31 +41,24 @@ public class RoomService {
         
         store.save(room);
 
-        return new RoomDto(room.getId(), room.getCode(), room.getQuestions(), room.getScores());
+        return toDto(room);
     }
 
     public RoomDto getRoom(String code){
 
         Room room = store.findByCode(code)
-        .orElseThrow(() -> new RuntimeException("No Room Found with code: " + code));
+        .orElseThrow(() -> new RoomNotFoundException(code));
         
-        return new RoomDto(room.getId(), room.getCode(), room.getQuestions(), room.getScores());
+        return toDto(room);
     }
 
     public boolean generateQuestions(String prompt, String code){
         
-        OpenAI openAI = new OpenAI();
-        PromptBuilder promptBuilder = new PromptBuilder();
-        String formattedPrompt = promptBuilder.build(prompt);
-
-        QuestionList questions = openAI.generate(formattedPrompt)
-        .orElseThrow(() -> new RuntimeException("Error generating questions"));
+        QuestionList questions = openAI.generate(prompt)
+        .orElseThrow(() -> new QuestionGenerationException("Error generating questions"));
 
         Room room = store.findByCode(code)
-        .orElseThrow(() -> new RuntimeException("Room not found"));
-
-        boolean validated = openAI.validateQuestions(questions);
-        if(!validated) new RuntimeException("Error generating questions");
+        .orElseThrow(() -> new RoomNotFoundException(code));
 
         room.setQuestions(questions);
 
@@ -67,14 +67,14 @@ public class RoomService {
 
     public void incrementScore(String name, String code){
         Room room = store.findByCode(code)
-        .orElseThrow(() -> new RuntimeException("No room found with code: " + code));
+        .orElseThrow(() -> new RoomNotFoundException(code));
         
         room.updateScore(name, 1);
     }
 
     public void resetScore(String name, String code){
         Room room = store.findByCode(code)
-        .orElseThrow(() -> new RuntimeException("No room found with code: " + code));
+        .orElseThrow(() -> new RoomNotFoundException(code));
 
         room.resetScore(name);
     }

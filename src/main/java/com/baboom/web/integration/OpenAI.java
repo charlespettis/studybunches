@@ -4,6 +4,8 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 
+import org.springframework.stereotype.Component;
+
 import com.baboom.web.model.QuestionList;
 import com.openai.client.OpenAIClient;
 import com.openai.client.okhttp.OpenAIOkHttpClient;
@@ -12,9 +14,15 @@ import com.openai.models.chat.completions.ChatCompletionCreateParams;
 import com.openai.models.chat.completions.StructuredChatCompletion;
 import com.openai.models.chat.completions.StructuredChatCompletionCreateParams;
 
+@Component
 public class OpenAI {
+    private final OpenAIClient client;
+
+    public OpenAI(){
+        this.client = OpenAIOkHttpClient.fromEnv();
+    }
+
     public Optional<QuestionList> generate(String prompt){
-        OpenAIClient client = OpenAIOkHttpClient.fromEnv();
 
         StructuredChatCompletionCreateParams<QuestionList> params = ChatCompletionCreateParams.builder()
         .addSystemMessage("""
@@ -35,28 +43,9 @@ public class OpenAI {
         .responseFormat(QuestionList.class)
         .build();
 
-        StructuredChatCompletion<QuestionList> output = client.chat().completions().create(params);
+        StructuredChatCompletion<QuestionList> output = this.client.chat().completions().create(params);
 
         return output.choices().get(0).message().content();
-    }
-
-    public boolean validateQuestions(QuestionList ql){
-        List<String> errors = new ArrayList<>();
-         
-        for (int i = 0; i < ql.questions.size(); i++) {
-            var q = ql.questions.get(i);
-
-            if (q.answers == null || q.answers.size() != 2){ 
-                errors.add(i + ": answers size != 2");
-            }else {
-                if (Objects.equals(q.answers.get(0), q.answers.get(1))) errors.add(i + ": answers not distinct");
-                if (!q.answers.contains(q.correctAnswer)) errors.add(i + ": correctAnswer not in answers");
-            }
-        }
-        
-        if(errors.size() > 0){
-            return true;
-        } return false;
     }
 
 }
