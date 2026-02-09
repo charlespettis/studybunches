@@ -1,4 +1,4 @@
-# 🚀 Project Name
+# 💣 Kaboom!
 
 > KaBoom! is a classroom tool that turns prompts into video games your students can play in their web browser. 
 
