@@ -4,6 +4,8 @@
 
 Teachers create a room, enter a topic, and KaBoom generates a set of multiple-choice questions using OpenAI. Students join with a room code and play through the questions in an interactive 3D environment. Scores are tracked in real time.
 
+See it in action at www.studybunches.com
+
 ## Tech Stack
 
 | Layer    | Technology                     |
